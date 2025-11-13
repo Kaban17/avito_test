@@ -19,8 +19,6 @@ func NewStatsRepository(db Querier) *StatsRepository {
 	return &StatsRepository{db: db}
 }
 
-// GetWorkload возвращает количество открытых PR для каждого пользователя
-// Это ключевой метод для fair distribution
 func (r *StatsRepository) GetWorkload(ctx context.Context, userIDs []string) (map[string]int, error) {
 	if len(userIDs) == 0 {
 		return make(map[string]int), nil
@@ -49,7 +47,6 @@ func (r *StatsRepository) GetWorkload(ctx context.Context, userIDs []string) (ma
 		workload[userID] = 0
 	}
 
-	// Заполняем реальными значениями
 	for rows.Next() {
 		var userID string
 		var count int
@@ -64,7 +61,6 @@ func (r *StatsRepository) GetWorkload(ctx context.Context, userIDs []string) (ma
 	return workload, rows.Err()
 }
 
-// IncrementAssignment увеличивает счётчик назначений (для статистики)
 func (r *StatsRepository) IncrementAssignment(ctx context.Context, userID string) error {
 	query := `
         INSERT INTO assignment_stats (user_id, assignment_count, last_assigned_at)
@@ -83,7 +79,6 @@ func (r *StatsRepository) IncrementAssignment(ctx context.Context, userID string
 	return nil
 }
 
-// GetUserStats возвращает детальную статистику по пользователю
 func (r *StatsRepository) GetUserStats(ctx context.Context, userID string) (*entity.UserStats, error) {
 	query := `
         SELECT
@@ -131,7 +126,6 @@ func (r *StatsRepository) GetUserStats(ctx context.Context, userID string) (*ent
 	return &stats, nil
 }
 
-// GetTeamStats возвращает статистику по всем командам
 func (r *StatsRepository) GetTeamStats(ctx context.Context) ([]*entity.TeamStats, error) {
 	query := `
         SELECT

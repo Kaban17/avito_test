@@ -1,27 +1,31 @@
-// internal/domain/service/reviewer_selector.go
 package service
 
 import (
 	"context"
-	"math/rand/v2"
+	"math/rand"
+	"sort"
+
 	"reviewer-service/internal/domain/entity"
 	"reviewer-service/internal/repository"
-	"sort"
 )
 
 type ReviewerSelector struct {
-	userRepo  repository.UserRepository
-	statsRepo repository.StatsRepository
+	// Без зависимостей - работаем через tx
+}
+
+func NewReviewerSelector() *ReviewerSelector {
+	return &ReviewerSelector{}
 }
 
 // Select выбирает до 2 ревьюеров с учётом fair distribution
 func (s *ReviewerSelector) Select(
 	ctx context.Context,
+	tx repository.Tx,
 	teamName string,
 	authorID string,
 ) ([]*entity.User, error) {
 	// 1. Получаем активных участников команды (кроме автора)
-	candidates, err := s.userRepo.GetActiveByTeam(ctx, teamName, authorID)
+	candidates, err := tx.Users().GetActiveByTeam(ctx, teamName, authorID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +35,12 @@ func (s *ReviewerSelector) Select(
 	}
 
 	// 2. Получаем текущую нагрузку каждого
-	workload, err := s.statsRepo.GetWorkload(ctx, candidateIDs(candidates))
+	candidateIDs := make([]string, len(candidates))
+	for i, c := range candidates {
+		candidateIDs[i] = c.UserID
+	}
+
+	workload, err := tx.Stats().GetWorkload(ctx, candidateIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +61,64 @@ func (s *ReviewerSelector) Select(
 	count := min(2, len(candidates))
 	return candidates[:count], nil
 }
-func candidateIDs(users []*entity.User) []string {
-	var ids []string
-	for _, user := range users {
-		ids = append(ids, user.UserID)
+
+// SelectReplacement выбирает одного ревьювера на замену
+func (s *ReviewerSelector) SelectReplacement(
+	ctx context.Context,
+	tx repository.Tx,
+	teamName string,
+	excludeUserIDs []string,
+) (*entity.User, error) {
+	// Получаем всех активных из команды
+	allUsers, err := tx.Users().GetByTeam(ctx, teamName)
+	if err != nil {
+		return nil, err
 	}
-	return ids
+
+	// Фильтруем: только активные + не в exclude списке
+	excludeMap := make(map[string]bool)
+	for _, id := range excludeUserIDs {
+		excludeMap[id] = true
+	}
+
+	var candidates []*entity.User
+	var candidateIDs []string
+
+	for _, user := range allUsers {
+		if user.IsActive && !excludeMap[user.UserID] {
+			candidates = append(candidates, user)
+			candidateIDs = append(candidateIDs, user.UserID)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, nil
+	}
+
+	// Получаем нагрузку
+	workload, err := tx.Stats().GetWorkload(ctx, candidateIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Сортируем по нагрузке
+	sort.Slice(candidates, func(i, j int) bool {
+		loadI := workload[candidates[i].UserID]
+		loadJ := workload[candidates[j].UserID]
+
+		if loadI == loadJ {
+			return rand.Float32() > 0.5
+		}
+		return loadI < loadJ
+	})
+
+	// Возвращаем первого (с минимальной нагрузкой)
+	return candidates[0], nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

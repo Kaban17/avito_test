@@ -20,7 +20,6 @@ func NewTeamRepository(db Querier) *TeamRepository {
 	return &TeamRepository{db: db}
 }
 
-// Create создаёт команду и всех её участников атомарно
 func (r *TeamRepository) Create(ctx context.Context, team *entity.Team) error {
 	// 1. Проверяем существование
 	exists, err := r.Exists(ctx, team.Name)
@@ -31,7 +30,6 @@ func (r *TeamRepository) Create(ctx context.Context, team *entity.Team) error {
 		return repository.ErrTeamExists
 	}
 
-	// 2. Создаём команду
 	query := `
         INSERT INTO teams (team_name, created_at)
         VALUES ($1, NOW())
@@ -47,14 +45,11 @@ func (r *TeamRepository) Create(ctx context.Context, team *entity.Team) error {
 		return fmt.Errorf("insert team: %w", err)
 	}
 
-	// 3. Создаём/обновляем всех участников
 	if len(team.Members) > 0 {
 		userRepo := NewUserRepository(r.db)
 		for _, member := range team.Members {
 			member.TeamName = team.Name
-
-			// Upsert пользователя
-			err := userRepo.Upsert(ctx, &member)
+			err := userRepo.Upsert(ctx, member)
 			if err != nil {
 				return fmt.Errorf("upsert user %s: %w", member.UserID, err)
 			}
@@ -64,7 +59,6 @@ func (r *TeamRepository) Create(ctx context.Context, team *entity.Team) error {
 	return nil
 }
 
-// GetByName возвращает команду со всеми участниками
 func (r *TeamRepository) GetByName(ctx context.Context, name string) (*entity.Team, error) {
 	query := `
         SELECT
@@ -102,7 +96,6 @@ func (r *TeamRepository) GetByName(ctx context.Context, name string) (*entity.Te
 		return nil, fmt.Errorf("query team: %w", err)
 	}
 
-	// Парсим JSON с участниками
 	if err := json.Unmarshal(membersJSON, &team.Members); err != nil {
 		return nil, fmt.Errorf("unmarshal members: %w", err)
 	}
@@ -110,7 +103,6 @@ func (r *TeamRepository) GetByName(ctx context.Context, name string) (*entity.Te
 	return &team, nil
 }
 
-// Exists проверяет существование команды
 func (r *TeamRepository) Exists(ctx context.Context, name string) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM teams WHERE team_name = $1)`
 

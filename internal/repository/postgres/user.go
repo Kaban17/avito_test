@@ -75,7 +75,6 @@ func (r *UserRepository) Create(ctx context.Context, user *entity.User) error {
 	return nil
 }
 
-// Update обновляет пользователя
 func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 	query := `
         UPDATE users
@@ -134,7 +133,6 @@ func (r *UserRepository) GetByID(ctx context.Context, userID string) (*entity.Us
 	return &user, nil
 }
 
-// GetByTeam возвращает всех участников команды
 func (r *UserRepository) GetByTeam(ctx context.Context, teamName string) ([]*entity.User, error) {
 	query := `
         SELECT user_id, username, team_name, is_active, created_at, updated_at
@@ -168,7 +166,6 @@ func (r *UserRepository) GetByTeam(ctx context.Context, teamName string) ([]*ent
 	return users, rows.Err()
 }
 
-// GetActiveByTeam возвращает активных участников команды (кроме excludeUserID)
 func (r *UserRepository) GetActiveByTeam(
 	ctx context.Context,
 	teamName string,
@@ -208,7 +205,6 @@ func (r *UserRepository) GetActiveByTeam(
 	return users, rows.Err()
 }
 
-// SetActive устанавливает флаг активности
 func (r *UserRepository) SetActive(ctx context.Context, userID string, isActive bool) error {
 	query := `
         UPDATE users
@@ -233,7 +229,6 @@ func (r *UserRepository) SetActive(ctx context.Context, userID string, isActive 
 	return nil
 }
 
-// BulkDeactivate деактивирует несколько пользователей одним запросом
 func (r *UserRepository) BulkDeactivate(ctx context.Context, userIDs []string) error {
 	if len(userIDs) == 0 {
 		return nil

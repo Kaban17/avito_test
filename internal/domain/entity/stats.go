@@ -11,11 +11,9 @@ type UserStats struct {
 	TotalReviews    int64
 	AssignmentCount int64
 	LastAssignedAt  time.Time
-	CreatedAt       time.Time
 }
 
 type TeamStats struct {
-	TeamID        string `json:"team_id"`
 	TeamName      string `json:"team_name"`
 	OpenPRs       int    `json:"open_prs"`
 	OpenReviews   int    `json:"open_reviews"`
