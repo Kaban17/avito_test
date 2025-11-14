@@ -1,15 +1,19 @@
+// cmd/api/main.go
 package main
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"reviewer-service/internal/domain/service"
+	httphandler "reviewer-service/internal/http"
+	"reviewer-service/internal/http/handler"
 	"reviewer-service/internal/repository/postgres"
 	"reviewer-service/internal/usecase"
 
@@ -29,7 +33,7 @@ func main() {
 	dbName := getEnv("DB_NAME", "reviewer_service")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASSWORD", "postgres")
-	//	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "8080")
 
 	// Connect to DB
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -58,33 +62,33 @@ func main() {
 	txManager := postgres.NewTxManager(db)
 	selector := service.NewReviewerSelector()
 
-	_ = usecase.NewTeamUseCase(txManager)
-	_ = usecase.NewUserUseCase(txManager)
-	_ = usecase.NewPullRequestUseCase(txManager, selector)
+	teamUC := usecase.NewTeamUseCase(txManager)
+	userUC := usecase.NewUserUseCase(txManager)
+	prUC := usecase.NewPullRequestUseCase(txManager, selector)
 
-	//	teamHandler := handler.NewTeamHandler(teamUC)
-	//	userHandler := handler.NewUserHandler(userUC)
-	//	prHandler := handler.NewPullRequestHandler(prUC)
+	teamHandler := handler.NewTeamHandler(teamUC)
+	userHandler := handler.NewUserHandler(userUC)
+	prHandler := handler.NewPullRequestHandler(prUC)
 
-	//	router := httphandler.NewRouter(teamHandler, userHandler, prHandler)
+	router := httphandler.NewRouter(teamHandler, userHandler, prHandler)
 
 	// HTTP Server
-	//	srv := &http.Server{
-	//		Addr:         ":" + port,
-	//		Handler:      router.Setup(),
-	//		ReadTimeout:  15 * time.Second,
-	//		WriteTimeout: 15 * time.Second,
-	//		IdleTimeout:  60 * time.Second,
-	//	}
-	//
-	//	// Start server
-	//	go func() {
-	//		log.Info().Str("port", port).Msg("starting http server")
-	//		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-	//			log.Fatal().Err(err).Msg("server failed")
-	//		}
-	//	}()
-	//
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      router.Setup(),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start server
+	go func() {
+		log.Info().Str("port", port).Msg("starting http server")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal().Err(err).Msg("server failed")
+		}
+	}()
+
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -92,12 +96,12 @@ func main() {
 
 	log.Info().Msg("shutting down server...")
 
-	_, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	//	if err := srv.Shutdown(ctx); err != nil {
-	//		log.Fatal().Err(err).Msg("server forced to shutdown")
-	//	}
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal().Err(err).Msg("server forced to shutdown")
+	}
 
 	log.Info().Msg("server exited")
 }
