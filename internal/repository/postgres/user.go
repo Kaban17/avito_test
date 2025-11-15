@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"reviewer-service/internal/domain/entity"
 	"reviewer-service/internal/repository"
@@ -145,7 +146,12 @@ func (r *UserRepository) GetByTeam(ctx context.Context, teamName string) ([]*ent
 	if err != nil {
 		return nil, fmt.Errorf("query users by team: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var users []*entity.User
 	for rows.Next() {
@@ -184,7 +190,12 @@ func (r *UserRepository) GetActiveByTeam(
 	if err != nil {
 		return nil, fmt.Errorf("query active users: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var users []*entity.User
 	for rows.Next() {

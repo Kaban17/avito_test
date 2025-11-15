@@ -6,7 +6,7 @@ This service manages pull request reviewer assignments within teams.
 ## Prerequisites
 - Docker and Docker Compose
 - PostgreSQL client (psql)
-- Go 1.19+
+- Go 1.24.7
 
 ## Setup
 

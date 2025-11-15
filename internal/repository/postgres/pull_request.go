@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 
 	"reviewer-service/internal/domain/entity"
@@ -204,7 +205,12 @@ func (r *PullRequestRepository) GetByReviewer(ctx context.Context, userID string
 	if err != nil {
 		return nil, fmt.Errorf("query prs by reviewer: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var prs []*entity.PullRequest
 	for rows.Next() {
@@ -250,7 +256,12 @@ func (r *PullRequestRepository) GetOpenByReviewers(ctx context.Context, userIDs 
 	if err != nil {
 		return nil, fmt.Errorf("query open prs by reviewers: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var prs []*entity.PullRequest
 	for rows.Next() {

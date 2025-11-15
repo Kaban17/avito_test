@@ -13,12 +13,10 @@ import (
 type mockTx struct {
 	usersRepo repository.UserRepository
 	statsRepo repository.StatsRepository
-	prRepo    repository.PullRequestRepository
-	teamRepo  repository.TeamRepository
 }
 
 func (m *mockTx) Teams() repository.TeamRepository {
-	return m.teamRepo
+	return &mockTeamRepo{}
 }
 
 func (m *mockTx) Users() repository.UserRepository {
@@ -30,7 +28,7 @@ func (m *mockTx) Stats() repository.StatsRepository {
 }
 
 func (m *mockTx) PullRequests() repository.PullRequestRepository {
-	return m.prRepo
+	return &mockPRRepo{}
 }
 
 func (m *mockTx) Commit() error {

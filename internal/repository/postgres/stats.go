@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"reviewer-service/internal/domain/entity"
 	"reviewer-service/internal/repository"
@@ -38,7 +39,12 @@ func (r *StatsRepository) GetWorkload(ctx context.Context, userIDs []string) (ma
 	if err != nil {
 		return nil, fmt.Errorf("query workload: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	workload := make(map[string]int)
 
@@ -156,7 +162,12 @@ func (r *StatsRepository) GetTeamStats(ctx context.Context) ([]*entity.TeamStats
 	if err != nil {
 		return nil, fmt.Errorf("query team stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error or handle it appropriately
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var stats []*entity.TeamStats
 	for rows.Next() {

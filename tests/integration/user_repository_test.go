@@ -58,7 +58,11 @@ func TestUserRepository_Integration(t *testing.T) {
 	}
 
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Logf("Error closing database connection: %v", err)
+		}
+	}()
 
 	// Создаем репозиторий
 	repo := postgres.NewUserRepository(db)

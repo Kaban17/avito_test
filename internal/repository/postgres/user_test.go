@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"reviewer-service/internal/domain/entity"
-	"reviewer-service/internal/repository"
 )
 
 // TestUserRepository_Create тестирует создание пользователя
@@ -84,21 +83,4 @@ func TestUserRepository_GetActiveByTeam(t *testing.T) {
 	// и проверка результата
 
 	_ = ctx
-}
-
-// setupTestDB - вспомогательная функция для настройки тестовой БД
-// В реальном проекте здесь будет код для подключения к тестовой БД
-// и очистки данных после тестов
-func setupTestDB(t *testing.T) repository.UserRepository {
-	// В реальном проекте здесь будет подключение к тестовой БД
-	// и создание экземпляра UserRepository
-
-	t.Skip("Skipping integration test - requires database connection")
-	return nil
-}
-
-// cleanupTestDB - вспомогательная функция для очистки тестовой БД
-func cleanupTestDB(t *testing.T) {
-	// В реальном проекте здесь будет код для очистки тестовых данных
-	_ = t
 }

@@ -58,30 +58,17 @@ type mockUsersRepo struct {
 	setActiveFn func(context.Context, string, bool) error
 	getByTeamFn func(context.Context, string) ([]*entity.User, error)
 	getActiveFn func(context.Context, string, string) ([]*entity.User, error)
-	createFn    func(context.Context, *entity.User) error
-	updateFn    func(context.Context, *entity.User) error
-	upsertFn    func(context.Context, *entity.User) error
-	bulkDeactFn func(context.Context, []string) error
 }
 
 func (m *mockUsersRepo) Create(ctx context.Context, user *entity.User) error {
-	if m.createFn != nil {
-		return m.createFn(ctx, user)
-	}
 	return nil
 }
 
 func (m *mockUsersRepo) Update(ctx context.Context, user *entity.User) error {
-	if m.updateFn != nil {
-		return m.updateFn(ctx, user)
-	}
 	return nil
 }
 
 func (m *mockUsersRepo) Upsert(ctx context.Context, user *entity.User) error {
-	if m.upsertFn != nil {
-		return m.upsertFn(ctx, user)
-	}
 	return nil
 }
 
@@ -114,35 +101,19 @@ func (m *mockUsersRepo) GetActiveByTeam(ctx context.Context, teamName, excludeID
 }
 
 func (m *mockUsersRepo) BulkDeactivate(ctx context.Context, userIDs []string) error {
-	if m.bulkDeactFn != nil {
-		return m.bulkDeactFn(ctx, userIDs)
-	}
 	return nil
 }
 
 type mockPRRepo struct {
-	getByReviewerFn      func(context.Context, string) ([]*entity.PullRequest, error)
-	getByIDFn            func(context.Context, string) (*entity.PullRequest, error)
-	getByIDForUpdateFn   func(context.Context, string) (*entity.PullRequest, error)
-	getOpenByReviewersFn func(context.Context, []string) ([]*entity.PullRequest, error)
-	createFn             func(context.Context, *entity.PullRequest) error
-	updateFn             func(context.Context, *entity.PullRequest) error
-	assignReviewersFn    func(context.Context, string, []string) error
-	replaceReviewerFn    func(context.Context, string, string, string) error
-	isReviewerAssignedFn func(context.Context, string, string) (bool, error)
+	getByReviewerFn func(context.Context, string) ([]*entity.PullRequest, error)
+	getByIDFn       func(context.Context, string) (*entity.PullRequest, error)
 }
 
 func (m *mockPRRepo) Create(ctx context.Context, pr *entity.PullRequest) error {
-	if m.createFn != nil {
-		return m.createFn(ctx, pr)
-	}
 	return nil
 }
 
 func (m *mockPRRepo) Update(ctx context.Context, pr *entity.PullRequest) error {
-	if m.updateFn != nil {
-		return m.updateFn(ctx, pr)
-	}
 	return nil
 }
 
@@ -154,9 +125,6 @@ func (m *mockPRRepo) GetByID(ctx context.Context, id string) (*entity.PullReques
 }
 
 func (m *mockPRRepo) GetByIDForUpdate(ctx context.Context, id string) (*entity.PullRequest, error) {
-	if m.getByIDForUpdateFn != nil {
-		return m.getByIDForUpdateFn(ctx, id)
-	}
 	return nil, nil
 }
 
@@ -168,92 +136,18 @@ func (m *mockPRRepo) GetByReviewer(ctx context.Context, userID string) ([]*entit
 }
 
 func (m *mockPRRepo) GetOpenByReviewers(ctx context.Context, userIDs []string) ([]*entity.PullRequest, error) {
-	if m.getOpenByReviewersFn != nil {
-		return m.getOpenByReviewersFn(ctx, userIDs)
-	}
 	return []*entity.PullRequest{}, nil
 }
 
 func (m *mockPRRepo) AssignReviewers(ctx context.Context, prID string, userIDs []string) error {
-	if m.assignReviewersFn != nil {
-		return m.assignReviewersFn(ctx, prID, userIDs)
-	}
 	return nil
 }
 
 func (m *mockPRRepo) ReplaceReviewer(ctx context.Context, prID, oldUserID, newUserID string) error {
-	if m.replaceReviewerFn != nil {
-		return m.replaceReviewerFn(ctx, prID, oldUserID, newUserID)
-	}
 	return nil
 }
 
 func (m *mockPRRepo) IsReviewerAssigned(ctx context.Context, prID, userID string) (bool, error) {
-	if m.isReviewerAssignedFn != nil {
-		return m.isReviewerAssignedFn(ctx, prID, userID)
-	}
-	return false, nil
-}
-
-type mockStatsRepo struct {
-	getWorkloadFn     func(context.Context, []string) (map[string]int, error)
-	incrementAssignFn func(context.Context, string) error
-	getUserStatsFn    func(context.Context, string) (*entity.UserStats, error)
-	getTeamStatsFn    func(context.Context) ([]*entity.TeamStats, error)
-}
-
-func (m *mockStatsRepo) GetWorkload(ctx context.Context, userIDs []string) (map[string]int, error) {
-	if m.getWorkloadFn != nil {
-		return m.getWorkloadFn(ctx, userIDs)
-	}
-	return map[string]int{}, nil
-}
-
-func (m *mockStatsRepo) IncrementAssignment(ctx context.Context, userID string) error {
-	if m.incrementAssignFn != nil {
-		return m.incrementAssignFn(ctx, userID)
-	}
-	return nil
-}
-
-func (m *mockStatsRepo) GetUserStats(ctx context.Context, userID string) (*entity.UserStats, error) {
-	if m.getUserStatsFn != nil {
-		return m.getUserStatsFn(ctx, userID)
-	}
-	return nil, nil
-}
-
-func (m *mockStatsRepo) GetTeamStats(ctx context.Context) ([]*entity.TeamStats, error) {
-	if m.getTeamStatsFn != nil {
-		return m.getTeamStatsFn(ctx)
-	}
-	return nil, nil
-}
-
-type mockTeamRepo struct {
-	getByNameFn func(context.Context, string) (*entity.Team, error)
-	createFn    func(context.Context, *entity.Team) error
-	existsFn    func(context.Context, string) (bool, error)
-}
-
-func (m *mockTeamRepo) Create(ctx context.Context, team *entity.Team) error {
-	if m.createFn != nil {
-		return m.createFn(ctx, team)
-	}
-	return nil
-}
-
-func (m *mockTeamRepo) GetByName(ctx context.Context, name string) (*entity.Team, error) {
-	if m.getByNameFn != nil {
-		return m.getByNameFn(ctx, name)
-	}
-	return nil, nil
-}
-
-func (m *mockTeamRepo) Exists(ctx context.Context, name string) (bool, error) {
-	if m.existsFn != nil {
-		return m.existsFn(ctx, name)
-	}
 	return false, nil
 }
 
