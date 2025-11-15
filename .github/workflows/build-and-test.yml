@@ -1,0 +1,57 @@
+name: Build and Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: reviewer_service_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24.7"
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Install golangci-lint
+        run: make install-lint
+
+      - name: Run linter
+        run: make lint
+
+      - name: Build
+        run: make build
+
+      - name: Run unit tests
+        run: go test -v ./...
+
+      - name: Run integration tests
+        run: go test -v ./tests/integration/...
+        env:
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/reviewer_service_test?sslmode=disable"
+
+      - name: Run tests with coverage
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
