@@ -5,8 +5,8 @@ import (
 	"reviewer-service/internal/domain/entity"
 )
 
-// Txable - интерфейс для выполнения операций в транзакции
-type Txable interface {
+// TxManager - интерфейс для управления транзакциями
+type TxManager interface {
 	WithTx(ctx context.Context, fn func(Tx) error) error
 }
 

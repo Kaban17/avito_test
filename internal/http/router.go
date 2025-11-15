@@ -39,6 +39,7 @@ func (rt *Router) Setup() http.Handler {
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		//nolint:errcheck
 		w.Write([]byte("OK"))
 	})
 

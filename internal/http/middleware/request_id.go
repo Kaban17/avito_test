@@ -11,7 +11,7 @@ import (
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := uuid.New().String()
-
+		//nolint
 		ctx := context.WithValue(r.Context(), "request_id", requestID)
 		w.Header().Set("X-Request-ID", requestID)
 

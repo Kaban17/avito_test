@@ -5,14 +5,13 @@ import (
 
 	"reviewer-service/internal/domain/entity"
 	"reviewer-service/internal/repository"
-	"reviewer-service/internal/repository/postgres"
 )
 
 type UserUseCase struct {
-	txManager *postgres.TxManager
+	txManager repository.TxManager
 }
 
-func NewUserUseCase(txManager *postgres.TxManager) *UserUseCase {
+func NewUserUseCase(txManager repository.TxManager) *UserUseCase {
 	return &UserUseCase{txManager: txManager}
 }
 

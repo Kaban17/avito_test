@@ -1,4 +1,4 @@
-.PHONY: all build run vet lint install-lint
+.PHONY: all build run vet lint install-lint test integration-test clean
 
 # Default target runs static analysis
 all: vet lint
@@ -11,8 +11,14 @@ build:
 run: build
 	@./api
 
+# Run all tests
 test:
 	@go test -v ./...
+
+# Run integration tests
+integration-test:
+	@echo "Running integration tests..."
+	@INTEGRATION_TESTS=1 go test -v ./tests/integration/...
 
 # Run go vet to check for programmatic errors
 vet:
