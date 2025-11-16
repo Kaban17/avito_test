@@ -139,6 +139,23 @@ func (r *PullRequestRepository) GetByID(ctx context.Context, prID string) (*enti
 }
 
 func (r *PullRequestRepository) GetByIDForUpdate(ctx context.Context, prID string) (*entity.PullRequest, error) {
+	// Сначала блокируем строку PR
+	lockQuery := `
+        SELECT pull_request_id
+        FROM pull_requests
+        WHERE pull_request_id = $1
+        FOR UPDATE
+    `
+
+	err := r.db.QueryRowContext(ctx, lockQuery, prID).Scan(&prID)
+	if err == sql.ErrNoRows {
+		return nil, repository.ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("lock pr: %w", err)
+	}
+
+	// Затем получаем полную информацию о PR
 	query := `
         SELECT
             pr.pull_request_id,
@@ -157,13 +174,12 @@ func (r *PullRequestRepository) GetByIDForUpdate(ctx context.Context, prID strin
         LEFT JOIN pr_reviewers r ON pr.pull_request_id = r.pull_request_id
         WHERE pr.pull_request_id = $1
         GROUP BY pr.pull_request_id
-        FOR UPDATE OF pr  -- блокируем только строку PR
     `
 
 	var pr entity.PullRequest
 	var reviewerIDs []string
 
-	err := r.db.QueryRowContext(ctx, query, prID).Scan(
+	err = r.db.QueryRowContext(ctx, query, prID).Scan(
 		&pr.ID,
 		&pr.Name,
 		&pr.AuthorID,
@@ -178,7 +194,7 @@ func (r *PullRequestRepository) GetByIDForUpdate(ctx context.Context, prID strin
 		return nil, repository.ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("query pr for update: %w", err)
+		return nil, fmt.Errorf("query pr: %w", err)
 	}
 
 	pr.AssignedReviewers = reviewerIDs
@@ -316,6 +332,36 @@ func (r *PullRequestRepository) AssignReviewers(ctx context.Context, prID string
 }
 
 func (r *PullRequestRepository) ReplaceReviewer(ctx context.Context, prID, oldUserID, newUserID string) error {
+	// Проверяем, назначен ли уже новый ревьюер
+	isAssigned, err := r.IsReviewerAssigned(ctx, prID, newUserID)
+	if err != nil {
+		return fmt.Errorf("check if new reviewer is already assigned: %w", err)
+	}
+
+	if isAssigned {
+		// Если новый ревьюер уже назначен, просто удаляем старого
+		deleteQuery := `
+            DELETE FROM pr_reviewers
+            WHERE pull_request_id = $1 AND user_id = $2
+        `
+
+		result, err := r.db.ExecContext(ctx, deleteQuery, prID, oldUserID)
+		if err != nil {
+			return fmt.Errorf("remove old reviewer: %w", err)
+		}
+
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		if rows == 0 {
+			return repository.ErrNotAssigned
+		}
+
+		return nil
+	}
+
 	// Атомарная операция: удаляем старого, добавляем нового
 	query := `
         WITH deleted AS (

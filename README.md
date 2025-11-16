@@ -54,3 +54,8 @@ You can test if the service is running correctly by making a request to the heal
 ```bash
 curl http://localhost:8080/health
 ```
+You can also run a load test using k6:
+```bash
+k6 run load_test.js
+```
+The result of the load test is available at file result.txt
