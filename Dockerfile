@@ -8,12 +8,19 @@ RUN go mod download
 
 RUN go build -o api ./cmd/api
 
-FROM scratch
+FROM alpine:latest
 WORKDIR /api
 
+# Установка необходимых пакетов
+RUN apk add --no-cache postgresql-client bash
+
+# Копирование бинарного файла и скриптов
 COPY --from=builder /api/api /api/api
+COPY scripts/init-db-docker.sh /api/scripts/init-db-docker.sh
+COPY migrations/ /api/migrations/
 
-COPY .env .env
+# Сделать скрипт исполняемым
+RUN chmod +x /api/scripts/init-db-docker.sh
 
-
-CMD ["/api/api"]
+# Команда запуска: сначала инициализация БД, затем запуск приложения
+CMD ["/bin/bash", "-c", "/api/scripts/init-db-docker.sh && /api/api"]

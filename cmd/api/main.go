@@ -32,7 +32,7 @@ func main() {
 	dbPort := getEnv("DB_PORT", "5432")
 	dbName := getEnv("DB_NAME", "reviewer_service")
 	dbUser := getEnv("DB_USER", "postgres")
-	dbPass := getEnv("DB_PASSWORD", "postgres")
+	dbPass := getEnv("DB_PASS", "postgres")
 	port := getEnv("PORT", "8080")
 
 	// Connect to DB
