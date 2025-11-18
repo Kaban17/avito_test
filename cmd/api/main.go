@@ -28,7 +28,7 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 	// Config
-	dbHost := getEnv("DB_HOST", "localhost")
+	dbHost := getEnv("DB_HOST", "postgres")
 	dbPort := getEnv("DB_PORT", "5432")
 	dbName := getEnv("DB_NAME", "reviewer_service")
 	dbUser := getEnv("DB_USER", "postgres")
@@ -40,6 +40,8 @@ func main() {
 		dbHost, dbPort, dbUser, dbPass, dbName)
 
 	db, err := sql.Open("postgres", dsn)
+
+	log.Info().Msgf("dsn string: %s", dsn)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to open database")
 	}
@@ -59,7 +61,6 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Fatal().Err(err).Msg("failed to ping database")
 	}
-
 	log.Info().Msg("connected to database")
 
 	// Initialize layers
